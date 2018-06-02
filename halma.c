@@ -40,7 +40,7 @@ GC mygc;
 GC myGcPlayer2;
 Visual *myvisual;
 Colormap screen_colormap;
-XColor black, white, red, blue;
+XColor black, white, red, blue, yellow;
 XEvent myevent;
 
 //Text declaration
@@ -110,11 +110,6 @@ void printPlayeWon(int id)
     XUnloadFont(mydisplay, font->fid);
 }
 
-void clearPlacementError()
-{
-    XClearArea(mydisplay, mywindow, 400, 500, 400, 400, 0);
-}
-
 GC create_gc(Display *display, Window win, int reverse_video)
 {
     GC gc;
@@ -155,6 +150,7 @@ GC create_gc(Display *display, Window win, int reverse_video)
     XAllocNamedColor(display, screen_colormap, "red", &red, &red);
     XAllocNamedColor(display, screen_colormap, "black", &black, &black);
     XAllocNamedColor(display, screen_colormap, "white", &white, &white);
+    XAllocNamedColor(display, screen_colormap, "yellow", &yellow, &yellow);
     // P2
     XAllocNamedColor(display, screen_colormap, "blue", &blue, &blue);
     return gc;
@@ -186,7 +182,7 @@ void initGame()
     tab[4][7] = 2;
 }
 
-void drawInitBoard()
+void drawInitBoard(int selectedX, int selectedY)
 {
     // 8x8 board
     int boardI = 0;
@@ -237,6 +233,11 @@ void drawInitBoard()
             isEven = 1;
         }
     }
+    if (selectedX != -1 && selectedY != -1)
+    {
+        XSetForeground(mydisplay, mygc, yellow.pixel);
+        drawBlock(selectedX * 80, selectedY * 80, mygc, board);
+    }
 }
 
 void drawPlayers()
@@ -262,7 +263,6 @@ void drawPlayers()
 
 int checkIfPlayerWon(int id)
 {
-    printTable();
     if (
         id == 1 &&
         tab[7][7] == 1 &&
@@ -299,9 +299,8 @@ int checkIfPlayerWon(int id)
 int main(int argc, char *argv[])
 {
     system("clear");
-    // int result = placeOnBoard(0,0,randBlock());
+    printf("Game start");
     initGame();
-    printTable();
     XInitThreads();
     mydisplay = XOpenDisplay(NULL);
 
@@ -365,7 +364,7 @@ int main(int argc, char *argv[])
 
             XFlush(mydisplay);
             XSync(mydisplay, False);
-            drawInitBoard();
+            drawInitBoard(-1, -1);
             drawPlayers();
             printPlayerName(playerTurn);
             flag++;
@@ -387,6 +386,8 @@ int main(int argc, char *argv[])
             {
                 selected[0] = posX;
                 selected[1] = posY;
+                drawInitBoard(posX, posY);
+                drawPlayers();
             }
             else if (selected[0] != -1 && !tab[posX][posY])
             {
@@ -466,11 +467,12 @@ int main(int argc, char *argv[])
                 }
                 tab[posX][posY] = tab[selected[0]][selected[1]];
                 tab[selected[0]][selected[1]] = 0;
-                drawInitBoard();
+                drawInitBoard(-1, -1);
                 drawPlayers();
                 isOver = checkIfPlayerWon(playerTurn);
                 if (isOver)
                 {
+                    printf("Player %d won!", isOver);
                     printPlayeWon(isOver);
                     break;
                 }
@@ -490,6 +492,8 @@ int main(int argc, char *argv[])
             {
                 selected[0] = posX;
                 selected[1] = posY;
+                drawInitBoard(posX, posY);
+                drawPlayers();
             }
             break;
         case KeyPress:
