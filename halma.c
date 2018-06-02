@@ -353,32 +353,73 @@ int main(int argc, char *argv[])
             // Jumps
             else if (selected[0] != -1 && !tab[posX][posY])
             {
-                int enemy = 2;
-                if (playerTurn == 2)
-                {
-                    enemy = 1;
-                }
                 int xDiff = abs(selected[0] - posX);
                 int yDiff = abs(selected[1] - posY);
-                if (xDiff == 2 && tab[posX][posY] == 0)
+                if ((xDiff == 2 || yDiff == 2) && tab[posX][posY] == 0)
                 {
                     int directionX = selected[0] - posX;
                     int directionY = selected[1] - posY;
-                    printf("%d %d %d \n", directionX, tab[posX + 1][posY], tab[posX - 1][posY]);
-                    // To left
-                    if (directionX > 0)
+                    // printf("%d %d %d \n", directionX, tab[posX + 1][posY], tab[posX - 1][posY]);
+                    if (directionX > 0 && directionY == 0)
                     {
                         if (!tab[posX + 1][posY] || tab[posX + 1][posY] == playerTurn)
                         {
                             break;
                         }
                     }
-                    else if (directionX < 0)
+                    else if (directionX < 0 && directionY == 0)
                     {
                         if (!tab[posX - 1][posY] || tab[posX - 1][posY] == playerTurn)
                         {
                             break;
                         }
+                    }
+                    else if (directionY > 0 && directionX == 0)
+                    {
+                        if (!tab[posX][posY + 1] || tab[posX][posY + 1] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                    else if (directionY < 0 && directionX == 0)
+                    {
+                        if (!tab[posX][posY - 1] || tab[posX][posY - 1] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+
+                    else if (directionX > 0 && directionY > 0)
+                    {
+                        if (!tab[posX + 1][posY + 1] || tab[posX + 1][posY + 1] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                    else if (directionX > 0 && directionY < 0)
+                    {
+                        if (!tab[posX + 1][posY - 1] || tab[posX + 1][posY - 1] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                    else if (directionX < 0 && directionY > 0)
+                    {
+                        if (!tab[posX - 1][posY + 1] || tab[posX - 1][posY + 1] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                    else if (directionX < 0 && directionY < 0)
+                    {
+                        if (!tab[posX - 1][posY - 1] || tab[posX - 1][posY - 1] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
                 else if (xDiff > 1 || yDiff > 1)
