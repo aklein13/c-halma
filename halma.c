@@ -11,8 +11,6 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 
-//Kolko i krzyzyk lab 7 c wspolbiegi master
-
 //Sem + shared memory
 #define key 30 //IPC key
 #define sem1 0
@@ -41,8 +39,8 @@ XGCValues mygcvalues;
 GC mygc;
 GC myGcPlayer2;
 Visual *myvisual;
-Colormap mycolormap, screen_colormap;
-XColor mycolor, mycolor0, mycolor1, mycolor2, mycolor3, mycolor4, mycolor5, dummy, black, white, red, blue;
+Colormap screen_colormap;
+XColor black, white, red, blue;
 XEvent myevent;
 
 //Text declaration
@@ -51,7 +49,7 @@ XTextItem ti[3];
 
 //Windows:
 //Main window: 1000x800
-//Board window: 800x800; 1 cell = 80 px; 8x8 cells = 800px x 800px
+//Board window: 640x640; 1 cell = 80 px; 8x8 cells = 640px x 640px
 
 void printTable()
 {
@@ -82,20 +80,6 @@ void drawPlayer(int x, int y, int playerId, GC mygc, Window board)
         XSetForeground(mydisplay, mygc, blue.pixel);
     }
     XFillArc(mydisplay, board, mygc, x, y, 80, 80, 0, 360 * 64);
-}
-
-//Place for P1 figures:
-//x=100, y=150
-//Place for P2 figures:
-//x=850, y=150
-void clearPlayer1()
-{
-    XClearArea(mydisplay, mywindow, 100, 150, 240, 240, 0);
-}
-
-void clearPlayer2()
-{
-    XClearArea(mydisplay, mywindow, 850, 150, 240, 240, 0);
 }
 
 void printPlayerName(int id)
