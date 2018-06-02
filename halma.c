@@ -26,10 +26,10 @@ int Player1 = 1;
 int Player2 = 2;
 int *shm; // shm = shared memory
 
-struct sembuf Player1_lock = {sem2,-1,0};  // Zablokuj P1
-struct sembuf Player1_unlock = {sem1,1,0}; // Odblokuj P1
-struct sembuf Player2_lock = {sem1,-1,0};  // Zablokuj P2
-struct sembuf Player2_unlock = {sem2,1,0}; // Odblokuj P2
+struct sembuf Player1_lock = {sem2, -1, 0};  // Zablokuj P1
+struct sembuf Player1_unlock = {sem1, 1, 0}; // Odblokuj P1
+struct sembuf Player2_lock = {sem1, -1, 0};  // Zablokuj P2
+struct sembuf Player2_unlock = {sem2, 1, 0}; // Odblokuj P2
 
 //XLIB configuration
 Display *mydisplay;
@@ -53,9 +53,12 @@ XTextItem ti[3];
 //Main window: 1000x800
 //Board window: 800x800; 1 cell = 80 px; 8x8 cells = 800px x 800px
 
-void printTable(){
-    for(int i = 0; i<8; i++){
-        for(int j = 0; j<8; j++){
+void printTable()
+{
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
             printf("%d ", tab[i][j]);
         }
         printf("\n");
@@ -63,80 +66,90 @@ void printTable(){
     printf("\n");
 }
 
-void drawBlock(int x, int y, GC mygc, Window board){  
+void drawBlock(int x, int y, GC mygc, Window board)
+{
     printf("%d %d\n", x, y);
     XFillRectangle(mydisplay, board, mygc, x, y, 80, 80);
 }
 
 //Place for P1 figures:
-        //x=100, y=150
-        //Place for P2 figures:
-        //x=850, y=150
-void clearPlayer1(){
-    XClearArea(mydisplay, mywindow, 100, 150, 240,240, 0);
+//x=100, y=150
+//Place for P2 figures:
+//x=850, y=150
+void clearPlayer1()
+{
+    XClearArea(mydisplay, mywindow, 100, 150, 240, 240, 0);
 }
 
-void clearPlayer2(){
-    XClearArea(mydisplay, mywindow, 850, 150, 240,240, 0);
+void clearPlayer2()
+{
+    XClearArea(mydisplay, mywindow, 850, 150, 240, 240, 0);
 }
 
-void printPlacementError(){
+void printPlacementError()
+{
     font = XLoadQueryFont(mydisplay, "7x14");
     ti[2].chars = "You cant place that there";
     ti[2].nchars = 25;
     ti[2].delta = 0;
     ti[2].font = font->fid;
-    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 500, 600, ti+2, 1);
-    XUnloadFont(mydisplay, font->fid); 
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 500, 600, ti + 2, 1);
+    XUnloadFont(mydisplay, font->fid);
 }
 
-void clearPlacementError(){
+void clearPlacementError()
+{
     XClearArea(mydisplay, mywindow, 400, 500, 400, 400, 0);
 }
 
-GC create_gc(Display* display, Window win, int reverse_video)
+GC create_gc(Display *display, Window win, int reverse_video)
 {
-  GC gc;				
-  unsigned long valuemask = 0;		
-  XGCValues values;
-  unsigned int line_width = 2;
-  int line_style = LineSolid;
-  int cap_style = CapButt;
-  int join_style = JoinBevel;
-  int screen_num = DefaultScreen(display);
+    GC gc;
+    unsigned long valuemask = 0;
+    XGCValues values;
+    unsigned int line_width = 2;
+    int line_style = LineSolid;
+    int cap_style = CapButt;
+    int join_style = JoinBevel;
+    int screen_num = DefaultScreen(display);
 
-  gc = XCreateGC(display, win, valuemask, &values);
-  if (gc < 0) {
-	printf("XCreateGC ERROR: \n");
-  }
+    gc = XCreateGC(display, win, valuemask, &values);
+    if (gc < 0)
+    {
+        printf("XCreateGC ERROR: \n");
+    }
 
-  /* allocate foreground and background colors for this GC. */
-if (reverse_video) {
-    XSetForeground(display, gc, BlackPixel(display, screen_num)+200);
-    XSetBackground(display, gc, WhitePixel(display, screen_num));
-  }
-  else {
-    XSetForeground(display, gc, BlackPixel(display, screen_num));
-    XSetBackground(display, gc, WhitePixel(display, screen_num));
-  }
+    /* allocate foreground and background colors for this GC. */
+    if (reverse_video)
+    {
+        XSetForeground(display, gc, BlackPixel(display, screen_num) + 200);
+        XSetBackground(display, gc, WhitePixel(display, screen_num));
+    }
+    else
+    {
+        XSetForeground(display, gc, BlackPixel(display, screen_num));
+        XSetBackground(display, gc, WhitePixel(display, screen_num));
+    }
 
-  /* define the style of lines that will be drawn using this GC. */
-  XSetLineAttributes(display, gc,
-  line_width, line_style, cap_style, join_style);
+    /* define the style of lines that will be drawn using this GC. */
+    XSetLineAttributes(display, gc,
+                       line_width, line_style, cap_style, join_style);
 
-  /* define the fill style for the GC. to be 'solid filling'. */
-  XSetFillStyle(display, gc, FillSolid);
-  return gc;
+    /* define the fill style for the GC. to be 'solid filling'. */
+    XSetFillStyle(display, gc, FillSolid);
+    return gc;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
     system("clear");
     // int result = placeOnBoard(0,0,randBlock());
     printTable();
     XInitThreads();
     mydisplay = XOpenDisplay(NULL);
 
-    if(mydisplay == NULL){
+    if (mydisplay == NULL)
+    {
         printf("Cant open display\n");
         exit(1);
     }
@@ -144,9 +157,9 @@ int main(int argc, char *argv[]){
     screen = DefaultScreen(mydisplay);
 
     //main window
-    mywindow = XCreateSimpleWindow(mydisplay, RootWindow(mydisplay,screen),
-     800, 800, 1000, 800,
-     1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
+    mywindow = XCreateSimpleWindow(mydisplay, RootWindow(mydisplay, screen),
+                                   800, 800, 1000, 800,
+                                   1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
 
     XSelectInput(mydisplay, mywindow, ExposureMask | KeyPressMask);
     XMapWindow(mydisplay, mywindow);
@@ -154,8 +167,8 @@ int main(int argc, char *argv[]){
     //board window
 
     board = XCreateSimpleWindow(mydisplay, mywindow,
-     100, 0, 800, 800,
-     1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
+                                100, 0, 800, 800,
+                                1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
 
     XSelectInput(mydisplay, board, ButtonPressMask);
     XMapWindow(mydisplay, board);
@@ -167,11 +180,11 @@ int main(int argc, char *argv[]){
 
     int x, y;
     int flag = 0;
-    int boardI = 0;
-    int boardJ = 0;
 
-    while(1){
-        if (flag < 2){
+    while (1)
+    {
+        if (flag < 2)
+        {
             //UI idk why it needs to draw 2 times
             printf("rysuje\n");
             font = XLoadQueryFont(mydisplay, "7x14");
@@ -182,49 +195,70 @@ int main(int argc, char *argv[]){
 
             ti[1].chars = "Player 2 figures";
             ti[1].nchars = 16;
-            ti[1].delta =0;
+            ti[1].delta = 0;
             ti[1].font = font->fid;
 
             XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 50, 50, ti, 1);
-            XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 850, 50, ti+1, 1);
-            XUnloadFont(mydisplay, font->fid); 
+            XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 850, 50, ti + 1, 1);
+            XUnloadFont(mydisplay, font->fid);
 
             XFlush(mydisplay);
             XSync(mydisplay, False);
             flag++;
             // 8x8 board
-            
-            for (boardI = 0; boardI < 800; boardI += 80) {
-                for (boardJ = 0; boardJ < 800; boardJ += 80){
-                    drawBlock(boardI, boardI, mygc, board);
+            int boardI = 0;
+            int boardJ = 0;
+            int isEven = 0;
+            int drawStart = 0;
+
+            for (boardI = 0; boardI < 800; boardI += 80)
+            {
+                if (isEven)
+                {
+                    drawStart = 80;
+                }
+                else
+                {
+                    drawStart = 0;
+                }
+                for (boardJ = drawStart; boardJ < 800; boardJ += 160)
+                {
+                    drawBlock(boardJ, boardI, mygc, board);
+                }
+                if (isEven)
+                {
+                    isEven = 0;
+                }
+                else
+                {
+                    isEven = 1;
                 }
             }
-            
         }
         XNextEvent(mydisplay, &myevent);
-        
-        switch(myevent.type){
-            case ButtonPress:
-                //get x and y from mouse position
-                x = myevent.xbutton.x;
-                y = myevent.xbutton.y;
 
-                drawBlock(x, y, mygc, board);
-                break;
-            case KeyPress:
-                //esc closes program
-                if(myevent.xkey.keycode == 9){
-                    clearPlayer1();
-                    clearPlayer2();
-                    printf("esc\n");
-                    XCloseDisplay(mydisplay);
-                    exit(0);
-                }
-                break;
+        switch (myevent.type)
+        {
+        case ButtonPress:
+            //get x and y from mouse position
+            x = myevent.xbutton.x;
+            y = myevent.xbutton.y;
+
+            // drawBlock(x, y, mygc, board);
+            break;
+        case KeyPress:
+            //esc closes program
+            if (myevent.xkey.keycode == 9)
+            {
+                clearPlayer1();
+                clearPlayer2();
+                printf("esc\n");
+                XCloseDisplay(mydisplay);
+                exit(0);
+            }
+            break;
         }
-
     }
 
     return 0;
-
 }
