@@ -98,14 +98,17 @@ void clearPlayer2()
     XClearArea(mydisplay, mywindow, 850, 150, 240, 240, 0);
 }
 
-void printPlacementError()
+void printPlayerName(int id)
 {
+    XClearArea(mydisplay, mywindow, 450, 0, 100, 100, 0);
     font = XLoadQueryFont(mydisplay, "7x14");
-    ti[2].chars = "You cant place that there";
-    ti[2].nchars = 25;
+    char temp[14];
+    sprintf(temp, "Player %d turn", id);
+    ti[2].chars = temp;
+    ti[2].nchars = 13;
     ti[2].delta = 0;
     ti[2].font = font->fid;
-    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 500, 600, ti + 2, 1);
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 450, 50, ti + 2, 1);
     XUnloadFont(mydisplay, font->fid);
 }
 
@@ -303,6 +306,7 @@ int main(int argc, char *argv[])
     int x, y;
     int flag = 0;
     int selected[2] = {-1};
+    int playerTurn = 1;
 
     while (1)
     {
@@ -328,6 +332,7 @@ int main(int argc, char *argv[])
             XSync(mydisplay, False);
             drawInitBoard();
             drawPlayers();
+            printPlayerName(playerTurn);
             flag++;
         }
         XNextEvent(mydisplay, &myevent);
@@ -340,22 +345,36 @@ int main(int argc, char *argv[])
             y = myevent.xbutton.y;
             int posX = x / 80;
             int posY = y / 80;
-            if (selected[0] == -1 && tab[posX][posY])
+            if (selected[0] == -1 && tab[posX][posY] == playerTurn)
             {
                 selected[0] = posX;
                 selected[1] = posY;
             }
             else if (selected[0] != -1 && !tab[posX][posY])
             {
+                int xDiff = abs(selected[0] - posX);
+                int yDiff = abs(selected[1] - posY);
+                if (xDiff > 1 || yDiff > 1)
+                {
+                    break;
+                }
                 tab[posX][posY] = tab[selected[0]][selected[1]];
                 tab[selected[0]][selected[1]] = 0;
                 drawInitBoard();
                 drawPlayers();
-                printTable();
                 selected[0] = -1;
                 selected[1] = -1;
+                if (playerTurn == 1)
+                {
+                    playerTurn = 2;
+                }
+                else
+                {
+                    playerTurn = 1;
+                }
+                printPlayerName(playerTurn);
             }
-            else if (selected[0] != -1 && tab[posX][posY])
+            else if (selected[0] != -1 && tab[posX][posY] == playerTurn)
             {
                 selected[0] = posX;
                 selected[1] = posY;
