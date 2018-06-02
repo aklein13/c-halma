@@ -41,8 +41,8 @@ XGCValues mygcvalues;
 GC mygc;
 GC myGcPlayer2;
 Visual *myvisual;
-Colormap mycolormap;
-XColor mycolor, mycolor0, mycolor1, mycolor2, mycolor3, mycolor4, mycolor5, dummy;
+Colormap mycolormap, screen_colormap;
+XColor mycolor, mycolor0, mycolor1, mycolor2, mycolor3, mycolor4, mycolor5, dummy, black, white, red, blue;
 XEvent myevent;
 
 //Text declaration
@@ -68,8 +68,20 @@ void printTable()
 
 void drawBlock(int x, int y, GC mygc, Window board)
 {
-    printf("%d %d\n", x, y);
     XFillRectangle(mydisplay, board, mygc, x, y, 80, 80);
+}
+
+void drawPlayer(int x, int y, int playerId, GC mygc, Window board)
+{
+    if (playerId == 1)
+    {
+        XSetForeground(mydisplay, mygc, red.pixel);
+    }
+    else
+    {
+        XSetForeground(mydisplay, mygc, blue.pixel);
+    }
+    XFillArc(mydisplay, board, mygc, x, y, 80, 80, 0, 360 * 64);
 }
 
 //Place for P1 figures:
@@ -137,13 +149,102 @@ GC create_gc(Display *display, Window win, int reverse_video)
 
     /* define the fill style for the GC. to be 'solid filling'. */
     XSetFillStyle(display, gc, FillSolid);
+    screen_colormap = DefaultColormap(display, DefaultScreen(display));
+    // P1
+    XAllocNamedColor(display, screen_colormap, "red", &red, &red);
+    XAllocNamedColor(display, screen_colormap, "black", &black, &black);
+    XAllocNamedColor(display, screen_colormap, "white", &white, &white);
+    // P2
+    XAllocNamedColor(display, screen_colormap, "blue", &blue, &blue);
     return gc;
+}
+
+void initGame()
+{
+    // Player 1
+    tab[0][0] = 1;
+    tab[0][1] = 1;
+    tab[0][2] = 1;
+    tab[0][3] = 1;
+    tab[1][0] = 1;
+    tab[1][1] = 1;
+    tab[1][2] = 1;
+    tab[2][0] = 1;
+    tab[2][1] = 1;
+    tab[3][0] = 1;
+    // Player 2
+    tab[7][7] = 2;
+    tab[7][6] = 2;
+    tab[7][5] = 2;
+    tab[7][4] = 2;
+    tab[6][7] = 2;
+    tab[6][6] = 2;
+    tab[6][5] = 2;
+    tab[5][7] = 2;
+    tab[5][6] = 2;
+    tab[4][7] = 2;
+}
+
+void drawInitBoard()
+{
+    // 8x8 board
+    int boardI = 0;
+    int boardJ = 0;
+    int isEven = 0;
+    int drawStart = 0;
+    XSetForeground(mydisplay, mygc, black.pixel);
+
+    for (boardI = 0; boardI < 640; boardI += 80)
+    {
+        if (isEven)
+        {
+            drawStart = 80;
+        }
+        else
+        {
+            drawStart = 0;
+        }
+        for (boardJ = drawStart; boardJ < 640; boardJ += 160)
+        {
+            drawBlock(boardJ, boardI, mygc, board);
+        }
+        if (isEven)
+        {
+            isEven = 0;
+        }
+        else
+        {
+            isEven = 1;
+        }
+    }
+}
+
+void drawPlayers()
+{
+    int i = 0;
+    int j = 0;
+    for (i = 0; i < 8; i++)
+    {
+        for (j = 0; j < 8; j++)
+        {
+            if (tab[i][j] == 1)
+            {
+                drawPlayer(i * 80, j * 80, 1, mygc, board);
+            }
+
+            else if (tab[i][j] == 2)
+            {
+                drawPlayer(i * 80, j * 80, 2, mygc, board);
+            }
+        }
+    }
 }
 
 int main(int argc, char *argv[])
 {
     system("clear");
     // int result = placeOnBoard(0,0,randBlock());
+    initGame();
     printTable();
     XInitThreads();
     mydisplay = XOpenDisplay(NULL);
@@ -157,18 +258,20 @@ int main(int argc, char *argv[])
     screen = DefaultScreen(mydisplay);
 
     //main window
-    mywindow = XCreateSimpleWindow(mydisplay, RootWindow(mydisplay, screen),
-                                   800, 800, 1000, 800,
-                                   1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
+    mywindow = XCreateSimpleWindow(
+        mydisplay, RootWindow(mydisplay, screen),
+        800, 800, 1000, 800,
+        1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
 
     XSelectInput(mydisplay, mywindow, ExposureMask | KeyPressMask);
     XMapWindow(mydisplay, mywindow);
 
     //board window
 
-    board = XCreateSimpleWindow(mydisplay, mywindow,
-                                100, 0, 800, 800,
-                                1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
+    board = XCreateSimpleWindow(
+        mydisplay, mywindow,
+        100, 100, 640, 640,
+        1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
 
     XSelectInput(mydisplay, board, ButtonPressMask);
     XMapWindow(mydisplay, board);
@@ -186,7 +289,6 @@ int main(int argc, char *argv[])
         if (flag < 2)
         {
             //UI idk why it needs to draw 2 times
-            printf("rysuje\n");
             font = XLoadQueryFont(mydisplay, "7x14");
             ti[0].chars = "Player 1 figures";
             ti[0].nchars = 16;
@@ -204,36 +306,9 @@ int main(int argc, char *argv[])
 
             XFlush(mydisplay);
             XSync(mydisplay, False);
+            drawInitBoard();
+            drawPlayers();
             flag++;
-            // 8x8 board
-            int boardI = 0;
-            int boardJ = 0;
-            int isEven = 0;
-            int drawStart = 0;
-
-            for (boardI = 0; boardI < 800; boardI += 80)
-            {
-                if (isEven)
-                {
-                    drawStart = 80;
-                }
-                else
-                {
-                    drawStart = 0;
-                }
-                for (boardJ = drawStart; boardJ < 800; boardJ += 160)
-                {
-                    drawBlock(boardJ, boardI, mygc, board);
-                }
-                if (isEven)
-                {
-                    isEven = 0;
-                }
-                else
-                {
-                    isEven = 1;
-                }
-            }
         }
         XNextEvent(mydisplay, &myevent);
 
