@@ -112,6 +112,20 @@ void printPlayerName(int id)
     XUnloadFont(mydisplay, font->fid);
 }
 
+void printPlayeWon(int id)
+{
+    XClearArea(mydisplay, mywindow, 450, 0, 100, 100, 0);
+    font = XLoadQueryFont(mydisplay, "7x14");
+    char temp[14];
+    sprintf(temp, "Player %d won!", id);
+    ti[2].chars = temp;
+    ti[2].nchars = 13;
+    ti[2].delta = 0;
+    ti[2].font = font->fid;
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 450, 50, ti + 2, 1);
+    XUnloadFont(mydisplay, font->fid);
+}
+
 void clearPlacementError()
 {
     XClearArea(mydisplay, mywindow, 400, 500, 400, 400, 0);
@@ -262,6 +276,42 @@ void drawPlayers()
     }
 }
 
+int checkIfPlayerWon(int id)
+{
+    printTable();
+    if (
+        id == 1 &&
+        tab[7][7] == 1 &&
+        tab[7][6] == 1 &&
+        tab[7][5] == 1 &&
+        tab[7][4] == 1 &&
+        tab[6][7] == 1 &&
+        tab[6][6] == 1 &&
+        tab[6][5] == 1 &&
+        tab[5][7] == 1 &&
+        tab[5][6] == 1 &&
+        tab[4][7] == 1)
+    {
+        return id;
+    }
+    if (
+        id == 2 &&
+        tab[0][0] == 2 &&
+        tab[0][1] == 2 &&
+        tab[0][2] == 2 &&
+        tab[0][3] == 2 &&
+        tab[1][0] == 2 &&
+        tab[1][1] == 2 &&
+        tab[1][2] == 2 &&
+        tab[2][0] == 2 &&
+        tab[2][1] == 2 &&
+        tab[3][0] == 2)
+    {
+        return id;
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     system("clear");
@@ -307,6 +357,7 @@ int main(int argc, char *argv[])
     int flag = 0;
     int selected[2] = {-1};
     int playerTurn = 1;
+    int isOver = 0;
 
     while (1)
     {
@@ -340,7 +391,10 @@ int main(int argc, char *argv[])
         switch (myevent.type)
         {
         case ButtonPress:
-            //get x and y from mouse position
+            if (isOver)
+            {
+                break;
+            }
             x = myevent.xbutton.x;
             y = myevent.xbutton.y;
             int posX = x / 80;
@@ -350,11 +404,11 @@ int main(int argc, char *argv[])
                 selected[0] = posX;
                 selected[1] = posY;
             }
-            // Jumps
             else if (selected[0] != -1 && !tab[posX][posY])
             {
                 int xDiff = abs(selected[0] - posX);
                 int yDiff = abs(selected[1] - posY);
+                // Jumps
                 if ((xDiff == 2 || yDiff == 2) && tab[posX][posY] == 0)
                 {
                     int directionX = selected[0] - posX;
@@ -430,6 +484,12 @@ int main(int argc, char *argv[])
                 tab[selected[0]][selected[1]] = 0;
                 drawInitBoard();
                 drawPlayers();
+                isOver = checkIfPlayerWon(playerTurn);
+                if (isOver)
+                {
+                    printPlayeWon(isOver);
+                    break;
+                }
                 selected[0] = -1;
                 selected[1] = -1;
                 if (playerTurn == 1)
@@ -447,21 +507,16 @@ int main(int argc, char *argv[])
                 selected[0] = posX;
                 selected[1] = posY;
             }
-
             break;
         case KeyPress:
             //esc closes program
-            if (myevent.xkey.keycode == 9)
+            if (myevent.xkey.keycode == 9 || myevent.xkey.keycode == 61)
             {
-                clearPlayer1();
-                clearPlayer2();
-                printf("esc\n");
                 XCloseDisplay(mydisplay);
                 exit(0);
             }
             break;
         }
     }
-
     return 0;
 }
