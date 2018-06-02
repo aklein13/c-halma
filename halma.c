@@ -59,7 +59,7 @@ void printTable()
     {
         for (int j = 0; j < 8; j++)
         {
-            printf("%d ", tab[i][j]);
+            printf("%d ", tab[j][i]);
         }
         printf("\n");
     }
@@ -191,22 +191,41 @@ void drawInitBoard()
     int boardI = 0;
     int boardJ = 0;
     int isEven = 0;
+    int isEvenJ = 0;
     int drawStart = 0;
-    XSetForeground(mydisplay, mygc, black.pixel);
 
     for (boardI = 0; boardI < 640; boardI += 80)
     {
         if (isEven)
         {
             drawStart = 80;
+            XSetForeground(mydisplay, mygc, white.pixel);
+            drawBlock(0, boardI, mygc, board);
         }
         else
         {
             drawStart = 0;
         }
-        for (boardJ = drawStart; boardJ < 640; boardJ += 160)
+        isEvenJ = 0;
+        for (boardJ = drawStart; boardJ < 640; boardJ += 80)
         {
+            if (isEvenJ)
+            {
+                XSetForeground(mydisplay, mygc, white.pixel);
+            }
+            else
+            {
+                XSetForeground(mydisplay, mygc, black.pixel);
+            }
             drawBlock(boardJ, boardI, mygc, board);
+            if (isEvenJ)
+            {
+                isEvenJ = 0;
+            }
+            else
+            {
+                isEvenJ = 1;
+            }
         }
         if (isEven)
         {
@@ -283,6 +302,7 @@ int main(int argc, char *argv[])
 
     int x, y;
     int flag = 0;
+    int selected[2] = {-1};
 
     while (1)
     {
@@ -318,8 +338,29 @@ int main(int argc, char *argv[])
             //get x and y from mouse position
             x = myevent.xbutton.x;
             y = myevent.xbutton.y;
+            int posX = x / 80;
+            int posY = y / 80;
+            if (selected[0] == -1 && tab[posX][posY])
+            {
+                selected[0] = posX;
+                selected[1] = posY;
+            }
+            else if (selected[0] != -1 && !tab[posX][posY])
+            {
+                tab[posX][posY] = tab[selected[0]][selected[1]];
+                tab[selected[0]][selected[1]] = 0;
+                drawInitBoard();
+                drawPlayers();
+                printTable();
+                selected[0] = -1;
+                selected[1] = -1;
+            }
+            else if (selected[0] != -1 && tab[posX][posY])
+            {
+                selected[0] = posX;
+                selected[1] = posY;
+            }
 
-            // drawBlock(x, y, mygc, board);
             break;
         case KeyPress:
             //esc closes program
