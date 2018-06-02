@@ -350,11 +350,38 @@ int main(int argc, char *argv[])
                 selected[0] = posX;
                 selected[1] = posY;
             }
+            // Jumps
             else if (selected[0] != -1 && !tab[posX][posY])
             {
+                int enemy = 2;
+                if (playerTurn == 2)
+                {
+                    enemy = 1;
+                }
                 int xDiff = abs(selected[0] - posX);
                 int yDiff = abs(selected[1] - posY);
-                if (xDiff > 1 || yDiff > 1)
+                if (xDiff == 2 && tab[posX][posY] == 0)
+                {
+                    int directionX = selected[0] - posX;
+                    int directionY = selected[1] - posY;
+                    printf("%d %d %d \n", directionX, tab[posX + 1][posY], tab[posX - 1][posY]);
+                    // To left
+                    if (directionX > 0)
+                    {
+                        if (!tab[posX + 1][posY] || tab[posX + 1][posY] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                    else if (directionX < 0)
+                    {
+                        if (!tab[posX - 1][posY] || tab[posX - 1][posY] == playerTurn)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if (xDiff > 1 || yDiff > 1)
                 {
                     break;
                 }
