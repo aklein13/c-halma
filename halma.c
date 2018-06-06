@@ -72,18 +72,23 @@ void drawBlock(int x, int y, GC mygc, Window board)
 void drawConfirm(GC mygc, Window mywindow)
 {
     XSetForeground(mydisplay, mygc, black.pixel);
-    XFillRectangle(mydisplay, mywindow, mygc, 780, 180, 160, 80);
+    XFillRectangle(mydisplay, mywindow, mygc, 780, 180, 200, 80);
     XSetForeground(mydisplay, mygc, white.pixel);
-    XFillRectangle(mydisplay, mywindow, mygc, 785, 185, 150, 70);
+    XFillRectangle(mydisplay, mywindow, mygc, 785, 185, 190, 70);
     XSetForeground(mydisplay, mygc, black.pixel);
     font = XLoadQueryFont(mydisplay, "7x14");
-    char temp[15] = "Click to finish";
+    char temp[20] = "Click to finish turn";
     ti[3].chars = temp;
-    ti[3].nchars = 15;
+    ti[3].nchars = 20;
     ti[3].delta = 0;
     ti[3].font = font->fid;
-    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 800, 220, ti + 3, 1);
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 810, 220, ti + 3, 1);
     XUnloadFont(mydisplay, font->fid);
+}
+
+void clearConfirm(GC mygc, Window mywindow)
+{
+    XClearArea(mydisplay, mywindow, 780, 180, 200, 80, 0);
 }
 
 void drawPlayer(int x, int y, int playerId, GC mygc, Window board)
@@ -360,6 +365,7 @@ int main(int argc, char *argv[])
     int selected[2] = {-1};
     int playerTurn = 1;
     int isOver = 0;
+    int longJump = 0;
 
     while (1)
     {
@@ -384,7 +390,6 @@ int main(int argc, char *argv[])
             XFlush(mydisplay);
             XSync(mydisplay, False);
             drawInitBoard(-1, -1);
-            drawConfirm(mygc, mywindow);
             drawPlayers();
             printPlayerName(playerTurn);
             flag++;
@@ -416,6 +421,10 @@ int main(int argc, char *argv[])
                     int xDiff = abs(selected[0] - posX);
                     int yDiff = abs(selected[1] - posY);
                     // Jumps
+                    if (longJump == 1 && xDiff != 2 && yDiff != 2)
+                    {
+                        break;
+                    }
                     if ((xDiff == 2 || yDiff == 2) && tab[posX][posY] == 0)
                     {
                         int directionX = selected[0] - posX;
@@ -423,28 +432,28 @@ int main(int argc, char *argv[])
                         // printf("%d %d %d \n", directionX, tab[posX + 1][posY], tab[posX - 1][posY]);
                         if (directionX > 0 && directionY == 0)
                         {
-                            if (!tab[posX + 1][posY] || tab[posX + 1][posY] == playerTurn)
+                            if (!tab[posX + 1][posY])
                             {
                                 break;
                             }
                         }
                         else if (directionX < 0 && directionY == 0)
                         {
-                            if (!tab[posX - 1][posY] || tab[posX - 1][posY] == playerTurn)
+                            if (!tab[posX - 1][posY])
                             {
                                 break;
                             }
                         }
                         else if (directionY > 0 && directionX == 0)
                         {
-                            if (!tab[posX][posY + 1] || tab[posX][posY + 1] == playerTurn)
+                            if (!tab[posX][posY + 1])
                             {
                                 break;
                             }
                         }
                         else if (directionY < 0 && directionX == 0)
                         {
-                            if (!tab[posX][posY - 1] || tab[posX][posY - 1] == playerTurn)
+                            if (!tab[posX][posY - 1])
                             {
                                 break;
                             }
@@ -452,28 +461,28 @@ int main(int argc, char *argv[])
 
                         else if (directionX > 0 && directionY > 0)
                         {
-                            if (!tab[posX + 1][posY + 1] || tab[posX + 1][posY + 1] == playerTurn)
+                            if (!tab[posX + 1][posY + 1])
                             {
                                 break;
                             }
                         }
                         else if (directionX > 0 && directionY < 0)
                         {
-                            if (!tab[posX + 1][posY - 1] || tab[posX + 1][posY - 1] == playerTurn)
+                            if (!tab[posX + 1][posY - 1])
                             {
                                 break;
                             }
                         }
                         else if (directionX < 0 && directionY > 0)
                         {
-                            if (!tab[posX - 1][posY + 1] || tab[posX - 1][posY + 1] == playerTurn)
+                            if (!tab[posX - 1][posY + 1])
                             {
                                 break;
                             }
                         }
                         else if (directionX < 0 && directionY < 0)
                         {
-                            if (!tab[posX - 1][posY - 1] || tab[posX - 1][posY - 1] == playerTurn)
+                            if (!tab[posX - 1][posY - 1])
                             {
                                 break;
                             }
@@ -482,6 +491,8 @@ int main(int argc, char *argv[])
                         {
                             break;
                         }
+                        longJump = 1;
+                        drawConfirm(mygc, mywindow);
                     }
                     else if (xDiff > 1 || yDiff > 1)
                     {
@@ -489,13 +500,26 @@ int main(int argc, char *argv[])
                     }
                     tab[posX][posY] = tab[selected[0]][selected[1]];
                     tab[selected[0]][selected[1]] = 0;
-                    drawInitBoard(-1, -1);
+                    if (longJump == 0)
+                    {
+                        drawInitBoard(-1, -1);
+                    }
+                    else
+                    {
+                        drawInitBoard(posX, posY);
+                        selected[0] = posX;
+                        selected[1] = posY;
+                    }
                     drawPlayers();
                     isOver = checkIfPlayerWon(playerTurn);
                     if (isOver)
                     {
                         printf("Player %d won!", isOver);
                         printPlayeWon(isOver);
+                        break;
+                    }
+                    if (longJump == 1)
+                    {
                         break;
                     }
                     selected[0] = -1;
@@ -510,7 +534,7 @@ int main(int argc, char *argv[])
                     }
                     printPlayerName(playerTurn);
                 }
-                else if (selected[0] != -1 && tab[posX][posY] == playerTurn)
+                else if (selected[0] != -1 && tab[posX][posY] == playerTurn && longJump == 0)
                 {
                     selected[0] = posX;
                     selected[1] = posY;
@@ -533,9 +557,30 @@ int main(int argc, char *argv[])
             switch (myevent.type)
             {
             case ButtonPress:
+                if (longJump != 1)
+                {
+                    break;
+                }
                 x = myevent.xbutton.x;
                 y = myevent.xbutton.y;
-                printf("%d %d\n", x, y);
+                // 780, 180, 160, 80
+                if (x >= 780 && x <= 1000 && y >= 180 && y <= 240)
+                {
+                    clearConfirm(mygc, mywindow);
+                    selected[0] = -1;
+                    selected[1] = -1;
+                    if (playerTurn == 1)
+                    {
+                        playerTurn = 2;
+                    }
+                    else
+                    {
+                        playerTurn = 1;
+                    }
+                    printPlayerName(playerTurn);
+                    drawInitBoard(-1, -1);
+                    drawPlayers();
+                }
                 break;
             }
         }
