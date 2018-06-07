@@ -224,7 +224,6 @@ GC create_gc(Display *display, Window win, int reverse_video)
 
 void initGame()
 {
-    printf("init");
     // Player 1
     tab[0][0] = 1;
     tab[0][1] = 1;
@@ -372,13 +371,11 @@ int play(int force)
     int x, y;
     int flag = 0;
     int longJump = 0;
-    printf("play");
 
     while (1)
     {
         if (flag < 2)
         {
-            //UI idk why it needs to draw 2 times
             font = XLoadQueryFont(mydisplay, "7x14");
             ti[0].chars = "Player 1 figures";
             ti[0].nchars = 16;
@@ -611,7 +608,7 @@ int move()
             printPlayerName(playerTurn);
             while (1)
             {
-                printf("\nOczekiwanie na ruch Gracza2\n");
+                printf("\Waiting for Player1 move\n");
                 semop(semafors, &Player2_lock, 1);
                 readFromMemory();
                 playerTurn = 1;
@@ -636,13 +633,12 @@ int move()
         printPlayerName(2);
         while (1)
         {
-            printf("p2 reads");
             readFromMemory();
             if (checkIfLoaded() == 1)
             {
                 while (1)
                 {
-                    printf("\nOczekiwanie na ruch Gracza1\n");
+                    printf("\Waiting for Player2 move\n");
                     semop(semafors, &Player1_lock, 1);
                     readFromMemory();
                     playerTurn = 2;
@@ -694,7 +690,6 @@ int main(int argc, char *argv[])
     }
     printf("\nYour name: %s", playername);
     initGame();
-    printf("Game start");
     XInitThreads();
     mydisplay = XOpenDisplay(NULL);
 
@@ -716,7 +711,6 @@ int main(int argc, char *argv[])
     XMapWindow(mydisplay, mywindow);
 
     //board window
-
     board = XCreateSimpleWindow(
         mydisplay, mywindow,
         100, 100, 640, 640,
