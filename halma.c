@@ -521,7 +521,7 @@ int play(int force)
                     isOver = checkIfPlayerWon(playerTurn);
                     if (isOver)
                     {
-                        printf("Player %d won!", isOver);
+                        printf("Player %d won!\n", isOver);
                         printPlayeWon(isOver);
                         break;
                     }
@@ -608,7 +608,7 @@ int move()
             printPlayerName(playerTurn);
             while (1)
             {
-                printf("\Waiting for Player1 move\n");
+                printf("\nWaiting for Player1 move\n");
                 semop(semafors, &Player2_lock, 1);
                 readFromMemory();
                 playerTurn = 1;
@@ -638,7 +638,7 @@ int move()
             {
                 while (1)
                 {
-                    printf("\Waiting for Player2 move\n");
+                    printf("\nWaiting for Player2 move\n");
                     semop(semafors, &Player1_lock, 1);
                     readFromMemory();
                     playerTurn = 2;
