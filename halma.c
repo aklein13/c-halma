@@ -20,9 +20,7 @@ int memory;
 int semafors;
 int tab[8][8] = {0};
 char *playername;
-int Player1 = 1;
-int Player2 = 2;
-int *shm; // shm = shared memory
+int (*shm)[8]; // shm = shared memory
 
 struct sembuf Player1_lock = {sem2, -1, 0};  // Zablokuj P1
 struct sembuf Player1_unlock = {sem1, 1, 0}; // Odblokuj P1
@@ -62,6 +60,52 @@ void printTable()
         printf("\n");
     }
     printf("\n");
+}
+
+void saveToMemory()
+{
+    printf("save\n");
+    for (int i = 0; i < 8; i++)
+    {
+        printf("kurwa");
+        for (int j = 0; j < 8; j++)
+        {
+            shm[i][j] = tab[i][j];
+        }
+    }
+}
+
+void readFromMemory()
+{
+    printf("read\n");
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            tab[i][j] = shm[i][j];
+        }
+    }
+}
+
+int checkIfLoaded()
+{
+    int flag = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (tab[i][j] == 0)
+                flag++;
+        }
+    }
+    if (flag == 64)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
 }
 
 void drawBlock(int x, int y, GC mygc, Window board)
@@ -180,6 +224,7 @@ GC create_gc(Display *display, Window win, int reverse_video)
 
 void initGame()
 {
+    printf("init");
     // Player 1
     tab[0][0] = 1;
     tab[0][1] = 1;
@@ -318,54 +363,16 @@ int checkIfPlayerWon(int id)
     return 0;
 }
 
-int main(int argc, char *argv[])
+int playerTurn = 1;
+int isOver = 0;
+int selected[2] = {-1};
+
+int play(int force)
 {
-    system("clear");
-    printf("Game start");
-    initGame();
-    XInitThreads();
-    mydisplay = XOpenDisplay(NULL);
-
-    if (mydisplay == NULL)
-    {
-        printf("Cant open display\n");
-        exit(1);
-    }
-
-    screen = DefaultScreen(mydisplay);
-
-    //main window
-    mywindow = XCreateSimpleWindow(
-        mydisplay, RootWindow(mydisplay, screen),
-        800, 800, 1000, 800,
-        1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
-
-    XSelectInput(mydisplay, mywindow, ExposureMask | KeyPressMask);
-    XMapWindow(mydisplay, mywindow);
-
-    //board window
-
-    board = XCreateSimpleWindow(
-        mydisplay, mywindow,
-        100, 100, 640, 640,
-        1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
-
-    XSelectInput(mydisplay, board, ButtonPressMask);
-    XSelectInput(mydisplay, mywindow, ButtonPressMask);
-    XMapWindow(mydisplay, board);
-    XMapWindow(mydisplay, mywindow);
-
-    //GC for player1
-    mygc = create_gc(mydisplay, board, 0);
-    //GC for player2
-    myGcPlayer2 = create_gc(mydisplay, board, 1);
-
     int x, y;
     int flag = 0;
-    int selected[2] = {-1};
-    int playerTurn = 1;
-    int isOver = 0;
     int longJump = 0;
+    printf("play");
 
     while (1)
     {
@@ -393,6 +400,10 @@ int main(int argc, char *argv[])
             drawPlayers();
             printPlayerName(playerTurn);
             flag++;
+        }
+        if (flag == 2 && force == 1)
+        {
+            return 5;
         }
         XNextEvent(mydisplay, &myevent);
 
@@ -429,7 +440,6 @@ int main(int argc, char *argv[])
                     {
                         int directionX = selected[0] - posX;
                         int directionY = selected[1] - posY;
-                        // printf("%d %d %d \n", directionX, tab[posX + 1][posY], tab[posX - 1][posY]);
                         if (directionX > 0 && directionY == 0)
                         {
                             if (!tab[posX + 1][posY])
@@ -524,15 +534,7 @@ int main(int argc, char *argv[])
                     }
                     selected[0] = -1;
                     selected[1] = -1;
-                    if (playerTurn == 1)
-                    {
-                        playerTurn = 2;
-                    }
-                    else
-                    {
-                        playerTurn = 1;
-                    }
-                    printPlayerName(playerTurn);
+                    return 0;
                 }
                 else if (selected[0] != -1 && tab[posX][posY] == playerTurn && longJump == 0)
                 {
@@ -547,6 +549,9 @@ int main(int argc, char *argv[])
                 if (myevent.xkey.keycode == 9 || myevent.xkey.keycode == 61)
                 {
                     XCloseDisplay(mydisplay);
+                    semctl(semafors, 0, IPC_RMID, 0);
+                    shmdt(shm);
+                    shmctl(memory, IPC_RMID, 0);
                     exit(0);
                 }
                 break;
@@ -569,21 +574,160 @@ int main(int argc, char *argv[])
                     clearConfirm(mygc, mywindow);
                     selected[0] = -1;
                     selected[1] = -1;
-                    if (playerTurn == 1)
-                    {
-                        playerTurn = 2;
-                    }
-                    else
-                    {
-                        playerTurn = 1;
-                    }
-                    printPlayerName(playerTurn);
                     drawInitBoard(-1, -1);
                     drawPlayers();
+                    return 0;
                 }
                 break;
             }
         }
     }
+    selected[0] = -1;
+    selected[1] = -1;
+    drawInitBoard(-1, -1);
+    drawPlayers();
+    return 0;
+}
+
+int move()
+{
+    int pom;
+    drawInitBoard(-1, -1);
+    drawPlayers();
+    printTable();
+    if (strcmp(playername, "Player1") == 0)
+    {
+        semctl(semafors, sem1, SETVAL, 0);
+        semctl(semafors, sem2, SETVAL, 1);
+        playerTurn = 1;
+        if (play(0) == 0)
+        {
+            saveToMemory();
+            playerTurn = 2;
+            selected[0] = -1;
+            selected[1] = -1;
+            drawInitBoard(-1, -1);
+            drawPlayers();
+            printPlayerName(playerTurn);
+            while (1)
+            {
+                printf("\nOczekiwanie na ruch Gracza2\n");
+                semop(semafors, &Player2_lock, 1);
+                readFromMemory();
+                playerTurn = 1;
+                selected[0] = -1;
+                selected[1] = -1;
+                printPlayerName(playerTurn);
+                if (play(0) == 0)
+                {
+                    saveToMemory();
+                    playerTurn = 2;
+                    printPlayerName(playerTurn);
+                    drawInitBoard(-1, -1);
+                    drawPlayers();
+                }
+                semop(semafors, &Player2_unlock, 1);
+            }
+        }
+    }
+    else
+    {
+        play(1);
+        printPlayerName(2);
+        while (1)
+        {
+            printf("p2 reads");
+            readFromMemory();
+            if (checkIfLoaded() == 1)
+            {
+                while (1)
+                {
+                    printf("\nOczekiwanie na ruch Gracza1\n");
+                    semop(semafors, &Player1_lock, 1);
+                    readFromMemory();
+                    playerTurn = 2;
+                    selected[0] = -1;
+                    selected[1] = -1;
+                    printPlayerName(playerTurn);
+                    if (play(0) == 0)
+                    {
+                        saveToMemory();
+                        playerTurn = 1;
+                        printPlayerName(playerTurn);
+                        drawInitBoard(-1, -1);
+                        drawPlayers();
+                    }
+                    semop(semafors, &Player1_unlock, 1);
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    system("clear");
+    //SEM
+    //Create memory
+    if ((memory = shmget(key, sizeof(int[10][10]), IPC_CREAT | IPC_EXCL | 0777)) == -1)
+    {
+        perror("shmget");
+        if ((memory = shmget(key, sizeof(int[10][10]), 0)) == -1)
+        {
+            printf("\nError with shared memory!\n");
+            perror("shmget");
+            exit(1);
+        }
+    }
+    semafors = semget(key, 2, 0777 | IPC_CREAT | IPC_EXCL);
+    shm = shmat(memory, 0, 0);
+    if (semafors == -1)
+    {
+        semafors = semget(key, 2, 0);
+        playername = "Player2";
+        readFromMemory();
+    }
+    else
+    {
+        playername = "Player1";
+    }
+    printf("\nYour name: %s", playername);
+    initGame();
+    printf("Game start");
+    XInitThreads();
+    mydisplay = XOpenDisplay(NULL);
+
+    if (mydisplay == NULL)
+    {
+        printf("Cant open display\n");
+        exit(1);
+    }
+
+    screen = DefaultScreen(mydisplay);
+
+    //main window
+    mywindow = XCreateSimpleWindow(
+        mydisplay, RootWindow(mydisplay, screen),
+        800, 800, 1000, 800,
+        1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
+
+    XSelectInput(mydisplay, mywindow, ExposureMask | KeyPressMask);
+    XMapWindow(mydisplay, mywindow);
+
+    //board window
+
+    board = XCreateSimpleWindow(
+        mydisplay, mywindow,
+        100, 100, 640, 640,
+        1, BlackPixel(mydisplay, screen), WhitePixel(mydisplay, screen));
+
+    XSelectInput(mydisplay, board, ButtonPressMask);
+    XSelectInput(mydisplay, mywindow, ButtonPressMask);
+    XMapWindow(mydisplay, board);
+    XMapWindow(mydisplay, mywindow);
+    mygc = create_gc(mydisplay, board, 0);
+
+    move();
     return 0;
 }
