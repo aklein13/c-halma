@@ -43,7 +43,7 @@ XEvent myevent;
 
 //Text declaration
 XFontStruct *font;
-XTextItem ti[4];
+XTextItem ti[5];
 
 //Windows:
 //Main window: 1000x800
@@ -64,7 +64,6 @@ void printTable()
 
 void saveToMemory()
 {
-    printf("save\n");
     for (int i = 0; i < 8; i++)
     {
         for (int j = 0; j < 8; j++)
@@ -144,6 +143,29 @@ void drawPlayer(int x, int y, int playerId, GC mygc, Window board)
         XSetForeground(mydisplay, mygc, blue.pixel);
     }
     XFillArc(mydisplay, board, mygc, x, y, 80, 80, 0, 360 * 64);
+}
+
+void printYourName(int id)
+{
+    font = XLoadQueryFont(mydisplay, "7x14");
+    ti[0].chars = "Player 1 figures";
+    ti[0].nchars = 16;
+    ti[0].delta = 0;
+    ti[0].font = font->fid;
+    ti[1].chars = "Player 2 figures";
+    ti[1].nchars = 16;
+    ti[1].delta = 0;
+    ti[1].font = font->fid;
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 50, 50, ti, 1);
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 850, 50, ti + 1, 1);
+    char temp[14];
+    sprintf(temp, "You are Player %d", id);
+    ti[4].chars = temp;
+    ti[4].nchars = 16;
+    ti[4].delta = 0;
+    ti[4].font = font->fid;
+    XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 850, 150, ti + 4, 1);
+    XUnloadFont(mydisplay, font->fid);
 }
 
 void printPlayerName(int id)
@@ -246,7 +268,6 @@ void initGame()
 
 void drawInitBoard(int selectedX, int selectedY)
 {
-    printf("draw init %d %d\n", selectedX, selectedY);
     // 8x8 board
     int boardI = 0;
     int boardJ = 0;
@@ -371,21 +392,6 @@ int play()
     {
         if (flag == 0)
         {
-            font = XLoadQueryFont(mydisplay, "7x14");
-            ti[0].chars = "Player 1 figures";
-            ti[0].nchars = 16;
-            ti[0].delta = 0;
-            ti[0].font = font->fid;
-
-            ti[1].chars = "Player 2 figures";
-            ti[1].nchars = 16;
-            ti[1].delta = 0;
-            ti[1].font = font->fid;
-
-            XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 50, 50, ti, 1);
-            XDrawText(mydisplay, mywindow, DefaultGC(mydisplay, screen), 850, 50, ti + 1, 1);
-            XUnloadFont(mydisplay, font->fid);
-
             XFlush(mydisplay);
             XSync(mydisplay, False);
             drawInitBoard(-1, -1);
@@ -514,7 +520,7 @@ int play()
                     {
                         printf("Player %d won!\n", isOver);
                         printPlayeWon(isOver);
-                        break;
+                        return 0;
                     }
                     if (longJump == 1)
                     {
@@ -556,8 +562,8 @@ int play()
                 }
                 x = myevent.xbutton.x;
                 y = myevent.xbutton.y;
-                // 780, 180, 160, 80
-                if (x >= 780 && x <= 1000 && y >= 180 && y <= 240)
+                // Confirm button - 780, 180, 200, 80
+                if (x >= 780 && x <= 980 && y >= 180 && y <= 260)
                 {
                     clearConfirm(mygc, mywindow);
                     selected[0] = -1;
@@ -712,6 +718,11 @@ int main(int argc, char *argv[])
     XMapWindow(mydisplay, mywindow);
     mygc = create_gc(mydisplay, board, 0);
 
+    printYourName(playerNumber);
+    if (playerNumber == 2)
+    {
+        printPlayerName(1);
+    }
     move();
     return 0;
 }
