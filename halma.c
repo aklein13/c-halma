@@ -19,7 +19,7 @@
 int memory;
 int semafors;
 int tab[8][8] = {0};
-char *playername;
+int playerNumber = 0;
 int (*shm)[8]; // shm = shared memory
 
 struct sembuf Player1_lock = {sem2, -1, 0};  // Zablokuj P1
@@ -67,7 +67,6 @@ void saveToMemory()
     printf("save\n");
     for (int i = 0; i < 8; i++)
     {
-        printf("kurwa");
         for (int j = 0; j < 8; j++)
         {
             shm[i][j] = tab[i][j];
@@ -77,7 +76,6 @@ void saveToMemory()
 
 void readFromMemory()
 {
-    printf("read\n");
     for (int i = 0; i < 8; i++)
     {
         for (int j = 0; j < 8; j++)
@@ -193,7 +191,6 @@ GC create_gc(Display *display, Window win, int reverse_video)
         printf("XCreateGC ERROR: \n");
     }
 
-    /* allocate foreground and background colors for this GC. */
     if (reverse_video)
     {
         XSetForeground(display, gc, BlackPixel(display, screen_num) + 200);
@@ -205,20 +202,19 @@ GC create_gc(Display *display, Window win, int reverse_video)
         XSetBackground(display, gc, WhitePixel(display, screen_num));
     }
 
-    /* define the style of lines that will be drawn using this GC. */
     XSetLineAttributes(display, gc,
                        line_width, line_style, cap_style, join_style);
 
-    /* define the fill style for the GC. to be 'solid filling'. */
     XSetFillStyle(display, gc, FillSolid);
     screen_colormap = DefaultColormap(display, DefaultScreen(display));
     // P1
     XAllocNamedColor(display, screen_colormap, "red", &red, &red);
+    // P2
+    XAllocNamedColor(display, screen_colormap, "blue", &blue, &blue);
+    // Other colors
     XAllocNamedColor(display, screen_colormap, "black", &black, &black);
     XAllocNamedColor(display, screen_colormap, "white", &white, &white);
     XAllocNamedColor(display, screen_colormap, "yellow", &yellow, &yellow);
-    // P2
-    XAllocNamedColor(display, screen_colormap, "blue", &blue, &blue);
     return gc;
 }
 
@@ -250,13 +246,13 @@ void initGame()
 
 void drawInitBoard(int selectedX, int selectedY)
 {
+    printf("draw init %d %d\n", selectedX, selectedY);
     // 8x8 board
     int boardI = 0;
     int boardJ = 0;
     int isEven = 0;
     int isEvenJ = 0;
     int drawStart = 0;
-
     for (boardI = 0; boardI < 640; boardI += 80)
     {
         if (isEven)
@@ -364,17 +360,16 @@ int checkIfPlayerWon(int id)
 
 int playerTurn = 1;
 int isOver = 0;
-int selected[2] = {-1};
+int selected[2] = {-1, -1};
 
-int play(int force)
+int play()
 {
     int x, y;
     int flag = 0;
     int longJump = 0;
-
     while (1)
     {
-        if (flag < 2)
+        if (flag == 0)
         {
             font = XLoadQueryFont(mydisplay, "7x14");
             ti[0].chars = "Player 1 figures";
@@ -397,10 +392,6 @@ int play(int force)
             drawPlayers();
             printPlayerName(playerTurn);
             flag++;
-        }
-        if (flag == 2 && force == 1)
-        {
-            return 5;
         }
         XNextEvent(mydisplay, &myevent);
 
@@ -592,12 +583,12 @@ int move()
     drawInitBoard(-1, -1);
     drawPlayers();
     printTable();
-    if (strcmp(playername, "Player1") == 0)
+    if (playerNumber == 1)
     {
         semctl(semafors, sem1, SETVAL, 0);
         semctl(semafors, sem2, SETVAL, 1);
         playerTurn = 1;
-        if (play(0) == 0)
+        if (play() == 0)
         {
             saveToMemory();
             playerTurn = 2;
@@ -608,14 +599,14 @@ int move()
             printPlayerName(playerTurn);
             while (1)
             {
-                printf("\nWaiting for Player1 move\n");
+                printf("\nWaiting for Player2 move\n");
                 semop(semafors, &Player2_lock, 1);
                 readFromMemory();
                 playerTurn = 1;
                 selected[0] = -1;
                 selected[1] = -1;
                 printPlayerName(playerTurn);
-                if (play(0) == 0)
+                if (play() == 0)
                 {
                     saveToMemory();
                     playerTurn = 2;
@@ -629,7 +620,6 @@ int move()
     }
     else
     {
-        play(1);
         printPlayerName(2);
         while (1)
         {
@@ -638,14 +628,14 @@ int move()
             {
                 while (1)
                 {
-                    printf("\nWaiting for Player2 move\n");
+                    printf("\nWaiting for Player1 move\n");
                     semop(semafors, &Player1_lock, 1);
                     readFromMemory();
                     playerTurn = 2;
                     selected[0] = -1;
                     selected[1] = -1;
                     printPlayerName(playerTurn);
-                    if (play(0) == 0)
+                    if (play() == 0)
                     {
                         saveToMemory();
                         playerTurn = 1;
@@ -681,14 +671,14 @@ int main(int argc, char *argv[])
     if (semafors == -1)
     {
         semafors = semget(key, 2, 0);
-        playername = "Player2";
+        playerNumber = 2;
         readFromMemory();
     }
     else
     {
-        playername = "Player1";
+        playerNumber = 1;
     }
-    printf("\nYour name: %s", playername);
+    printf("\nYour name: Player %d", playerNumber);
     initGame();
     XInitThreads();
     mydisplay = XOpenDisplay(NULL);
